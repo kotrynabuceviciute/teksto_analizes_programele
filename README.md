@@ -1,4 +1,4 @@
-# Tekto analizės programėlė
+# Teksto analizės programėlė
 
 Programa, kuri skaičiuoja įvestą žmogaus tekstą. Programėlė gali suskaičiuoti:
 1. Sakinių skaičių;
