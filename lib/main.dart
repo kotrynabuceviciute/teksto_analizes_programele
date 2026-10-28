@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 void main() {
   runApp(const TextAnalyzerApp());
 }
+
 class TextAnalyzerApp extends StatelessWidget {
   const TextAnalyzerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Teksto analizė',
       home: const AnalysisScreen(),
     );
   }
@@ -39,6 +41,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final List<AnalysisResult> _history = [];
   AnalysisResult? _current;
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   void _analyze() {
     final text = _controller.text;
     if (text.trim().isEmpty) {
@@ -66,82 +74,83 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Teksto analizė')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _controller,
-              maxLines: 5,
-              decoration: const InputDecoration(labelText: 'Įveskite tekstą'),
-            ),
-            ElevatedButton(onPressed: _analyze, child: const Text('Analizuoti')),
-            _current != null
-                ? _ResultCard(result: _current!)
-                : const Text('Rezultatų dar nėra. Įveskite tekstą ir paspauskite "Analizuoti".'),
-            const SizedBox(height:10),
-            const Text(' Tikrinimų istorija', style: TextStyle(fontWeight: FontWeight.bold)),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _history.length,
-                itemBuilder: (context, index) {
-                  final item = _history[index];
-                  return ListTile(
-                    subtitle: Text(
-                      'Sakinys: ${item.text}\n'
-                      'Sakiniai: ${item.sentences}\n'
-                      'Žodžiai: ${item.words}\n'
-                      'Skyrybos ženklai: ${item.punctuationMarks}\n'
-                      'Skaičiai: ${item.digits}',
-                    ),
-                  );
-                },
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _controller,
+                maxLines: 5,
+                keyboardType: TextInputType.multiline,
+                decoration: const InputDecoration(
+                  labelText: 'Įveskite tekstą',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _analyze,
+                child: const Text('Analizuoti'),
+              ),
+              const SizedBox(height: 16),
+              if (_current == null)
+                const Text('Rezultatų dar nėra. Įveskite tekstą ir paspauskite "Analizuoti".')
+              else
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Rezultatai',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Sakiniai: ${_current!.sentences}'),
+                        Text('Žodžiai: ${_current!.words}'),
+                        Text('Skyrybos ženklai: ${_current!.punctuationMarks}'),
+                        Text('Skaičiai: ${_current!.digits}'),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tikrinimų istorija',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              if (_history.isEmpty)
+                const Text('Istorija tuščia.')
+            else
+              for (final item in _history)
+                ListTile(
+                  subtitle: Text(
+                    'Tekstas: ${item.text}\n'
+                    'Sakiniai: ${item.sentences}\n'
+                    'Žodžiai: ${item.words}\n'
+                    'Skyrybos ženklai: ${item.punctuationMarks}\n'
+                    'Skaičiai: ${item.digits}',
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ResultCard extends StatelessWidget {
-  final AnalysisResult result;
-
-  const _ResultCard({required this.result});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Colors.blueGrey.withOpacity(0.5),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Rezultatai',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text('Sakinių skaičius: ${result.sentences}'),
-            Text('Žodžių skaičius: ${result.words}'),
-            Text('Skyrybos ženklai: ${result.punctuationMarks}'),
-            Text('Skaitmenų skaičius: ${result.digits}'),
-          ],
-        ),
-      ),
-    );
-  }
-}
 class Counter {
   static int getWordCount(String? input) {
     if (input == null) return -1;
     final words = input.trim().split(RegExp(r'\s+'));
     int wordCount = 0;
     for (final word in words) {
-      final subWords = word.split(RegExp(r'[^a-zA-ZąčęėįšųūĄČĘĖĮŠŲŪ]+'));
+      final subWords = word.split(RegExp(r'[^a-zA-ZąčęėįšųūžĄČĘĖĮŠŲŪŽ]+'));
       for (final singleWord in subWords) {
         if (singleWord.isNotEmpty) {
           wordCount++;
@@ -157,7 +166,7 @@ class Counter {
     List<String> pieces = text.split(RegExp(r'[.!?]+'));
     int count = 0;
     for (String piece in pieces) {
-      if (piece.trim().isNotEmpty) {
+      if (RegExp(r'[a-zA-ZąčęėįšųūžĄČĘĖĮŠŲŪŽ0-9]').hasMatch(piece)) {
         count++;
       }
     }
