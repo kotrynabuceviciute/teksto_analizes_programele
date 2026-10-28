@@ -1,6 +1,6 @@
-# tekto_analizes_programele
+# Tekto analizės programėlė
 
-Programa, kuri skaiciuoja įvestą žmogaus tekstą. Programelė gali suskaičiuoti 
+Programa, kuri skaičiuoja įvestą žmogaus tekstą. Programėlė gali suskaičiuoti:
 1. Sakinių skaičių;
 2. Žodžių skaičių;
 3. Skyrybos ženklų skaičių;
